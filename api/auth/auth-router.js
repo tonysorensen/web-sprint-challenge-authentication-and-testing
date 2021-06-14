@@ -1,19 +1,31 @@
 const bcrypt= require('bcrypt')
 const router = require('express').Router();
 const AuthorizedUser = require('./auth-model')
-const{restricted}=require("../middleware/restricted")
+const {checkUsernameExists} = require("../middleware/checkUsername")
+const {checkUserPassword} = require("../middleware/checkUserPassword")
 const { JWT_SECRET } = require("../secrets"); 
 const jwt = require('jsonwebtoken');
-router.post('/register', (req, res, next) => {
+
+
+router.get('/',(req,res)=>{
+AuthorizedUser.find().then(users=> res.status(200).json(users)).catch(err=>
+  {console.log(err)
+    res.status(400).json({message: err})})
+})
+
+
+router.post('/register',checkUserPassword, checkUsernameExists, (req, res, next) => {
   let user = req.body
 
   const rounds = process.env.BCRYPT_ROUNDS || 8;
   const hash = bcrypt.hashSync(user.password, rounds)
 
 user.password = hash
+console.log(AuthorizedUser.findByName(user.username))
+
   AuthorizedUser.add(user)
   .then(res.status(201).json(user))
-  .catch(next)
+
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -45,12 +57,12 @@ router.post('/login', (req, res,next) => {
   
   let { username, password } = req.body;
 
-  AuthorizedUser.findBy({ username }) // it would be nice to have middleware do this
+  AuthorizedUser.findByName( username ) // it would be nice to have middleware do this
     .then(([user]) => {
       if (user && bcrypt.compareSync(password, user.password)) {
         const token = makeToken(user)
         res.status(200).json({
-          message: `${user.username} is back!`,
+          message: `welcome, ${user.username}`,
           token
         });
       } else {
