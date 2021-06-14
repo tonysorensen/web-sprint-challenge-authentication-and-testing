@@ -21,7 +21,7 @@ router.post('/register',checkUserPassword, checkUsernameExists, (req, res, next)
   const hash = bcrypt.hashSync(user.password, rounds)
 
 user.password = hash
-console.log(AuthorizedUser.findByName(user.username))
+//console.log(AuthorizedUser.findByName(user.username))
 
   AuthorizedUser.add(user)
   .then(res.status(201).json(user))

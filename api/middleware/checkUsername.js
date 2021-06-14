@@ -5,7 +5,6 @@ const checkUsernameExists = (req, res, next) => {
 
     Users.findByName(username)
     .then(user => {
-      console.log("user",user)
       if (user.length > 0) {
         res.status(400).json({message: "username is taken"})
       } else {
