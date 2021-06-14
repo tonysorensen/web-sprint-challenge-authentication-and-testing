@@ -53,9 +53,12 @@ console.log(AuthorizedUser.findByName(user.username))
   */
 });
 
-router.post('/login', (req, res,next) => {
+router.post('/login', checkUserPassword, (req, res,next) => {
   
   let { username, password } = req.body;
+
+
+
 
   AuthorizedUser.findByName( username ) // it would be nice to have middleware do this
     .then(([user]) => {
@@ -66,10 +69,11 @@ router.post('/login', (req, res,next) => {
           token
         });
       } else {
-        res.status(401).json({ message: 'Invalid Credentials' });
+        res.status(401).json({ message: 'invalid credentials' });
       }
     })
     .catch(next);
+    {
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -93,6 +97,7 @@ router.post('/login', (req, res,next) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
+    }
 });
 function makeToken(user){
   const payload = {
