@@ -1,20 +1,19 @@
 const bcrypt= require('bcrypt')
 const router = require('express').Router();
-const {restricted}=require("../middleware/restricted")
-const { JWT_SECRET } = require("../secrets");
-const jwt = require("jsonwebtoken")
+const AuthorizedUser = require('./auth-model')
+const{restricted}=require("../middleware/restricted")
+const { JWT_SECRET } = require("../secrets"); 
+const jwt = require('jsonwebtoken');
+router.post('/register', (req, res, next) => {
+  let user = req.body
 
-
-router.post('/register', (req, res) => {
-let user = req.body
-
- const rounds = process.env.BCRYPT_ROUNDS || 8
- const hash = bcrypt.hashSync(user.password, rounds)
+  const rounds = process.env.BCRYPT_ROUNDS || 8;
+  const hash = bcrypt.hashSync(user.password, rounds)
 
 user.password = hash
-
-
-
+  AuthorizedUser.add(user)
+  .then(res.status(201).json(user))
+  .catch(next)
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -42,8 +41,23 @@ user.password = hash
   */
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+router.post('/login', (req, res,next) => {
+  
+  let { username, password } = req.body;
+
+  AuthorizedUser.findBy({ username }) // it would be nice to have middleware do this
+    .then(([user]) => {
+      if (user && bcrypt.compareSync(password, user.password)) {
+        const token = makeToken(user)
+        res.status(200).json({
+          message: `${user.username} is back!`,
+          token
+        });
+      } else {
+        res.status(401).json({ message: 'Invalid Credentials' });
+      }
+    })
+    .catch(next);
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -68,5 +82,14 @@ router.post('/login', (req, res) => {
       the response body should include a string exactly as follows: "invalid credentials".
   */
 });
-
+function makeToken(user){
+  const payload = {
+    subject: user.id,
+    username: user.username,
+  }
+  const options = {
+    expiresIn: "24h"
+  }
+  return jwt.sign(payload,JWT_SECRET,options)
+}
 module.exports = router;
